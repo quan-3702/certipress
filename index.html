@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CertiPress – Certificate Maker</title>
+  <meta name="description" content="Make and print award certificates, diplomas and gift certificates. Type a list of names and get one certificate for each. Simple, private and offline.">
+  <meta name="theme-color" content="#1e3a8a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+  <style id="pageRule"></style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><img src="icon-192.png" alt="" width="30" height="30"><span>CertiPress</span></div>
+    <span class="tree-title"></span>
+    <div class="top-btns">
+      <button id="printBtn" class="tb">🖨 Print</button>
+      <button id="moreBtn" class="tb">☰ More</button>
+      <button id="proBtn" class="pro-btn" hidden>★ Get Pro</button>
+    </div>
+    <div id="menu" class="menu" hidden>
+      <button id="pngBtn">Save this certificate as a picture… <span class="badge pro-only">PRO</span></button>
+      <button id="sampleBtn">Fill in an example</button>
+      <button id="resetBtn" class="danger">Start again…</button>
+      <a href="help.html" target="_blank" rel="noopener">❓ How to use CertiPress</a>
+      <a href="mailto:thequan03072002@gmail.com?subject=CertiPress%20feedback">✉ Feedback &amp; support</a>
+      <a href="https://apps.microsoft.com/detail/9N003PBQX6Q0" target="_blank" rel="noopener">More apps: PuzzlePrint word search maker</a>
+      <a href="https://apps.microsoft.com/detail/9MWSF3JMP1GJ" target="_blank" rel="noopener">More apps: PrintCal photo calendar maker</a>
+    </div>
+    <input id="fileIn" type="file" accept="image/*" hidden>
+  </header>
+
+  <main class="layout">
+    <aside class="left">
+      <h2>1 · Design</h2>
+      <div id="tpls" class="tpls"></div>
+      <div id="colors" class="swatches"></div>
+      <div class="two">
+        <label class="field">Paper<select id="paper"></select></label>
+        <label class="field">Direction<select id="land"><option value="1">Wide (landscape)</option><option value="0">Tall (portrait)</option></select></label>
+      </div>
+      <label class="field">Lettering<select id="font"><option value="classic">Classic with handwriting name</option><option value="modern">Modern</option><option value="formal">Formal</option></select></label>
+
+      <h2>2 · Words</h2>
+      <label class="field">Title<input id="head" type="text" list="headList" maxlength="60" placeholder="Certificate of Achievement"></label>
+      <datalist id="headList"></datalist>
+      <label class="field">Line above the name<input id="pre" type="text" maxlength="90"></label>
+      <label class="field">Names – one on each line<textarea id="names" placeholder="Emily Johnson&#10;Michael Carter&#10;Sophia Nguyen" spellcheck="false"></textarea></label>
+      <p id="hint" class="hint"></p>
+      <label class="field">What it is for<textarea id="reason" maxlength="400"></textarea></label>
+
+      <h2>3 · Date and signatures</h2>
+      <label class="check"><input id="showDate" type="checkbox"> Show the date</label>
+      <label class="field">Date<input id="date" type="text" maxlength="40"></label>
+      <div class="two">
+        <label class="field">Signed by<input id="sig1" type="text" maxlength="40" placeholder="Name"></label>
+        <label class="field">Their role<input id="sig1t" type="text" maxlength="40" placeholder="e.g. Principal"></label>
+      </div>
+      <div class="two">
+        <label class="field">Second signature<input id="sig2" type="text" maxlength="40" placeholder="(optional)"></label>
+        <label class="field">Their role<input id="sig2t" type="text" maxlength="40"></label>
+      </div>
+      <label class="check"><input id="seal" type="checkbox"> Show the gold seal</label>
+      <div class="logo-row">
+        <button id="logoBtn" class="ghost">Add a logo picture…</button><span class="badge pro-only">PRO</span>
+        <button id="logoDel" class="ghost danger" hidden>Remove logo</button>
+      </div>
+    </aside>
+
+    <section class="stage">
+      <div id="pager" class="pager"></div>
+      <div class="preview">
+        <button id="prev" class="nav" title="Previous certificate">‹</button>
+        <div id="page" style="height:100%;display:flex;align-items:center;justify-content:center;min-width:0;flex:1"></div>
+        <button id="next" class="nav" title="Next certificate">›</button>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="proDialog" class="dlg">
+    <h2>CertiPress Pro</h2>
+    <p class="muted">One-time purchase. Yours forever on this Microsoft account. The free version never limits how often you print.</p>
+    <ul class="pro-list">
+      <li><strong>All 8 designs</strong> <span class="muted">(Free: 3)</span></li>
+      <li><strong>Unlimited names at a time</strong> – a whole class or team in one go <span class="muted">(Free: 5)</span></li>
+      <li><strong>Your own logo</strong> at the top of the certificate</li>
+      <li><strong>Save as a picture</strong> to send by email or message</li>
+    </ul>
+    <p id="proMsg" class="pro-msg" hidden></p>
+    <div class="row-btns">
+      <button id="buyBtn" class="primary">Unlock Pro</button>
+      <button id="restoreBtn" class="ghost">Restore purchase</button>
+      <button id="closePro" class="ghost">Not now</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+  <div id="printArea"></div>
+  <script src="app.js"></script>
+</body>
+</html>

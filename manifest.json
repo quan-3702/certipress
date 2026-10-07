@@ -1,0 +1,16 @@
+{
+  "name": "CertiPress - Certificate Maker",
+  "short_name": "CertiPress",
+  "description": "Make and print award certificates, diplomas and gift certificates. Type a list of names and get one certificate for each. Simple, private and offline.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1e3a8a",
+  "theme_color": "#1e3a8a",
+  "categories": ["productivity", "education"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
