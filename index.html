@@ -22,6 +22,7 @@
     </div>
     <div id="menu" class="menu" hidden>
       <button id="pngBtn">Save this certificate as a picture… <span class="badge pro-only">PRO</span></button>
+      <button id="zipBtn">Save each certificate as a PDF (ZIP) – ready to email <span class="badge pro-only">PRO</span></button>
       <button id="sampleBtn">Fill in an example</button>
       <button id="resetBtn" class="danger">Start again…</button>
       <a href="help.html" target="_blank" rel="noopener">❓ How to use CertiPress</a>
@@ -47,6 +48,7 @@
       <label class="field">Title<input id="head" type="text" list="headList" maxlength="60" placeholder="Certificate of Achievement"></label>
       <datalist id="headList"></datalist>
       <label class="field">Line above the name<input id="pre" type="text" maxlength="90"></label>
+      <button id="importBtn" class="ghost" type="button">📥 Import names from Excel / CSV…</button>
       <label class="field">Names – one on each line<textarea id="names" placeholder="Emily Johnson&#10;Michael Carter&#10;Sophia Nguyen" spellcheck="false"></textarea></label>
       <p id="hint" class="hint"></p>
       <label class="field">What it is for<textarea id="reason" maxlength="400"></textarea></label>
@@ -63,6 +65,12 @@
         <label class="field">Their role<input id="sig2t" type="text" maxlength="40"></label>
       </div>
       <label class="check"><input id="seal" type="checkbox"> Show the gold seal</label>
+      <label class="check"><input id="numOn" type="checkbox"> Number each certificate</label>
+      <div id="numRow" class="two" hidden>
+        <label class="field">Starts with<input id="numPrefix" type="text" maxlength="20" placeholder="No. "></label>
+        <label class="field">First number<input id="numStart" type="text" inputmode="numeric" maxlength="6"></label>
+      </div>
+      <label class="check"><input id="qrOn" type="checkbox"> Add a QR code with the certificate details <span class="badge pro-only">PRO</span></label>
       <div class="logo-row">
         <button id="logoBtn" class="ghost">Add a logo picture…</button><span class="badge pro-only">PRO</span>
         <button id="logoDel" class="ghost danger" hidden>Remove logo</button>
@@ -84,6 +92,8 @@
     <p class="muted">One-time purchase. Yours forever on this Microsoft account. The free version never limits how often you print.</p>
     <ul class="pro-list">
       <li><strong>All 8 designs</strong> <span class="muted">(Free: 3)</span></li>
+      <li><strong>One PDF for every person</strong> in a ZIP file, ready to email</li>
+      <li><strong>QR code</strong> with the certificate details</li>
       <li><strong>Unlimited names at a time</strong> – a whole class or team in one go <span class="muted">(Free: 5)</span></li>
       <li><strong>Your own logo</strong> at the top of the certificate</li>
       <li><strong>Save as a picture</strong> to send by email or message</li>
