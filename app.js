@@ -10,7 +10,16 @@ let proAvailable = false; // Pro limits apply only when the Store actually sells
 proAvailable = true; // owner's rule: Pro is never free – free limits apply everywhere (website, Store, offline) until Pro is bought
 let proSku = PRO_SKU;
 let isPro = false;
-try { isPro = localStorage.getItem('certipress-pro') === '1'; } catch (_) {}
+try { // the saved Pro flag is trusted only in the Store app, and only for 30 days after the Store last confirmed it
+  if ('getDigitalGoodsService' in window && localStorage.getItem('certipress-pro') === '1') {
+    const ok = localStorage.getItem('certipress-pro-ok'), t = Number(ok), now = Date.now();
+    if (ok === null) { localStorage.setItem('certipress-pro-ok', String(now)); isPro = true; } // saved by an older version: counts as confirmed now, once
+    else isPro = t > 0 && t <= now && now - t < 30 * 864e5;
+  }
+} catch (_) {}
+function savePro(v) { // only called when the Store answered
+  try { if (v) { localStorage.setItem('certipress-pro', '1'); localStorage.setItem('certipress-pro-ok', String(Date.now())); } else { localStorage.removeItem('certipress-pro'); localStorage.removeItem('certipress-pro-ok'); } } catch (_) {}
+}
 // ---------- Import a list from Excel, CSV or the clipboard (shared by the Press apps) ----------
 // importList({ title, fields: [{ key, label, required, guess: /regex/ }], onDone(rows) })
 // rows = [{ key: value, ... }] – only non-empty rows.
@@ -232,7 +241,6 @@ async function billing() {
 }
 function setPro(v) {
   isPro = v;
-  try { localStorage.setItem('certipress-pro', v ? '1' : '0'); } catch (_) {}
   const b = $('proBtn');
   b.textContent = v ? '★ Pro' : '★ Get Pro';
   b.classList.toggle('is-pro', v);
@@ -256,7 +264,7 @@ async function checkPro() {
     if (details[0]) { proSku = details[0].itemId; if (!PRO_IDS.includes(proSku)) PRO_IDS.push(proSku); }
     const list = await svc.listPurchases();
     const owned = list.some((p) => PRO_IDS.includes(p.itemId));
-    if (owned || details.length) { setPro(owned); return owned; }
+    if (owned || details.length) { savePro(owned); setPro(owned); return owned; }
     setPro(isPro); // Store did not answer (offline): keep what we knew
     return isPro;
   } catch (_) { return isPro; }
@@ -456,7 +464,9 @@ if (typeof document !== 'undefined') (function () {
   window.toast = function (msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 5000); };
   function renderPage() {
     const p = certificate(nameList()[pageNo] || '', true, pageNo); // only the shown certificate is drawn (QR codes for a long list are slow)
-    $('page').innerHTML = p.svg.replace(/ width="[\d.]+mm" height="[\d.]+mm"/, ` style="aspect-ratio:${p.w}/${p.h};width:min(100%, calc((100vh - 170px) * ${p.w / p.h}))"`);
+    const locked = !unlocked() && (tplLocked(st.tpl) || st.logo || st.qrOn || pageNo >= FREE_NAMES); // a Pro certificate is only a marked preview in the free version
+    const mark = locked ? `<text x="${(p.w / 2).toFixed(2)}" y="${(p.h / 2).toFixed(2)}" font-size="${(p.w / 6).toFixed(2)}" font-family="Segoe UI, Arial, sans-serif" font-weight="800" fill="#1e3a8a" fill-opacity=".14" text-anchor="middle" dominant-baseline="middle" transform="rotate(-25 ${(p.w / 2).toFixed(2)} ${(p.h / 2).toFixed(2)})">PREVIEW</text></svg>` : '</svg>';
+    $('page').innerHTML = p.svg.replace(/<\/svg>$/, mark).replace(/ width="[\d.]+mm" height="[\d.]+mm"/, ` style="aspect-ratio:${p.w}/${p.h};width:min(100%, calc((100vh - 170px) * ${p.w / p.h}))"`);
     $('pager').textContent = pageCount > 1 ? `Certificate ${pageNo + 1} of ${pageCount}` : 'Preview';
     $('prev').disabled = pageNo === 0; $('next').disabled = pageNo >= pageCount - 1;
   }

@@ -144,3 +144,5 @@ textarea { min-height: 70px; resize: vertical; }
 #names { min-height: 120px; }
 #reason { min-height: 64px; }
 .logo-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.fb-note { color: var(--muted); font-size: 13px; line-height: 1.45; margin: 8px 0 0; overflow-wrap: anywhere; }
+.fb-note a { color: var(--accent); }
