@@ -1,4 +1,4 @@
-const CACHE = 'certipress-v5';
+const CACHE = 'certipress-v6';
 const ASSETS = ['./', 'index.html', 'help.html', 'style.css', 'app.js', 'manifest.json', 'icon-192.png', 'icon-512.png', 'icon-512-maskable.png', 'privacy.html'];
 
 self.addEventListener('install', (e) => {
