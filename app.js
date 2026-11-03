@@ -7,6 +7,7 @@ const PRO_SKU = 'certipress_pro';
 const PRO_IDS = [PRO_SKU];
 let STORE_URL = 'https://apps.microsoft.com/detail/9NSLV1NJP0J5';
 let proAvailable = false; // Pro limits apply only when the Store actually sells the add-on
+try { if ('getDigitalGoodsService' in window && localStorage.getItem('certipress-proavail') === '1') proAvailable = true; } catch (_) {} // keep Pro limits when offline
 let proSku = PRO_SKU;
 let isPro = false;
 try { isPro = localStorage.getItem('certipress-pro') === '1'; } catch (_) {}
@@ -239,17 +240,26 @@ function setPro(v) {
   document.body.classList.toggle('unlocked', unlocked());
   if (typeof renderAll === 'function') renderAll();
 }
+async function checkProAfterBuy() {
+  for (let i = 0; i < 6; i++) {
+    if (await checkPro()) return true;
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  proMessage('Thank you! If Pro is not unlocked within a minute, click “Restore purchase”.');
+  return false;
+}
 async function checkPro() {
   const svc = await billing();
   if (!svc) return false;
   try {
     const details = await svc.getDetails(PRO_IDS).catch(() => []);
-    proAvailable = details.length > 0;
+    if (details.length) { proAvailable = true; try { localStorage.setItem('certipress-proavail', '1'); } catch (_) {} }
     if (details[0]) { proSku = details[0].itemId; if (!PRO_IDS.includes(proSku)) PRO_IDS.push(proSku); }
     const list = await svc.listPurchases();
     const owned = list.some((p) => PRO_IDS.includes(p.itemId));
-    setPro(owned);
-    return owned;
+    if (owned || details.length) { setPro(owned); return owned; }
+    setPro(isPro); // Store did not answer (offline): keep what we knew
+    return isPro;
   } catch (_) { return isPro; }
 }
 function proMessage(text) { const m = $('proMsg'); m.hidden = !text; m.textContent = text || ''; }
@@ -284,7 +294,7 @@ async function buyPro() {
     proMessage('Purchase could not be completed: ' + (e.message || e));
     return;
   }
-  if (await checkPro()) { proMessage('Thank you! Pro is unlocked. ★'); setTimeout(() => $('proDialog').close(), 1500); }
+  if (await checkProAfterBuy()) { proMessage('Thank you! Pro is unlocked. ★'); setTimeout(() => $('proDialog').close(), 1500); }
 }
 function needsPro(reason) {
   if (unlocked()) return false;
@@ -383,7 +393,7 @@ function sealSvg(cx, cy, r, c) {
 }
 
 // ---------- one certificate (SVG in millimetres) ----------
-const certNo = (i) => `${st.numPrefix || ''}${String((Number(st.numStart) || 1) + i).padStart(3, '0')}`;
+const certNo = (i) => `${st.numPrefix || ''}${String((Number(st.numStart) >= 0 ? Number(st.numStart) : 1) + i).padStart(3, '0')}`;
 const personOf = (name) => (st.people && st.people[name]) || {};
 function certificate(name, screen, idx) {
   idx = idx || 0;
@@ -442,13 +452,13 @@ function limitReason() {
 if (typeof module !== 'undefined') module.exports = { certificate, build, border, wrapText, fitSize, textW, nameList, pageSize, limitReason, TPLS, HEADS, COLORS, PAPERS, getSt: () => st, setSt: (o) => { Object.assign(st, o); }, setProState: (avail, pro) => { proAvailable = avail; isPro = pro; } };
 
 if (typeof document !== 'undefined') (function () {
-  let pages = [], pageNo = 0, toastTimer;
+  let pageCount = 1, pageNo = 0, toastTimer;
   window.toast = function (msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 5000); };
   function renderPage() {
-    const p = pages[pageNo];
+    const p = certificate(nameList()[pageNo] || '', true, pageNo); // only the shown certificate is drawn (QR codes for a long list are slow)
     $('page').innerHTML = p.svg.replace(/ width="[\d.]+mm" height="[\d.]+mm"/, ` style="aspect-ratio:${p.w}/${p.h};width:min(100%, calc((100vh - 170px) * ${p.w / p.h}))"`);
-    $('pager').textContent = pages.length > 1 ? `Certificate ${pageNo + 1} of ${pages.length}` : 'Preview';
-    $('prev').disabled = pageNo === 0; $('next').disabled = pageNo >= pages.length - 1;
+    $('pager').textContent = pageCount > 1 ? `Certificate ${pageNo + 1} of ${pageCount}` : 'Preview';
+    $('prev').disabled = pageNo === 0; $('next').disabled = pageNo >= pageCount - 1;
   }
   function renderTpls() {
     $('tpls').innerHTML = TPLS.map((t) => { const b = border(t.id, 120, 90, st.color); return `<button data-t="${t.id}" class="${t.id === st.tpl ? 'on' : ''}" title="${t.name}" aria-label="${t.name} design"><svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#fff"/>${b.s}</svg>${tplLocked(t.id) ? '<span class="badge">PRO</span>' : ''}</button>`; }).join('');
@@ -458,12 +468,12 @@ if (typeof document !== 'undefined') (function () {
     ['paper', 'font', 'pre', 'date', 'sig1', 'sig1t', 'sig2', 'sig2t', 'head', 'names', 'reason'].forEach((k) => { if (document.activeElement !== $(k)) $(k).value = st[k]; });
     $('land').value = st.land ? '1' : '0'; $('showDate').checked = !!st.showDate; $('seal').checked = !!st.seal;
     $('numOn').checked = !!st.numOn; $('qrOn').checked = !!st.qrOn; $('numRow').hidden = !st.numOn;
-    if (document.activeElement !== $('numPrefix')) $('numPrefix').value = st.numPrefix || ''; if (document.activeElement !== $('numStart')) $('numStart').value = st.numStart || 1;
+    if (document.activeElement !== $('numPrefix')) $('numPrefix').value = st.numPrefix || ''; if (document.activeElement !== $('numStart')) $('numStart').value = st.numStart >= 0 ? st.numStart : 1;
     $('logoDel').hidden = !st.logo; $('logoBtn').textContent = st.logo ? 'Change logo…' : 'Add a logo picture…';
     renderTpls();
-    pages = build(true); pageNo = Math.min(pageNo, pages.length - 1);
+    pageCount = Math.max(1, nameList().length); pageNo = Math.min(pageNo, pageCount - 1);
     const n = nameList().length;
-    const own = Object.keys(st.people || {}).filter((k) => nameList().includes(k)).length;
+    const nl = new Set(nameList()), own = Object.keys(st.people || {}).filter((k) => nl.has(k)).length;
     $('hint').textContent = (n ? `${n} certificate${n === 1 ? '' : 's'} will be printed – one for each name.` : 'No names yet: one certificate with an empty line is printed, ready to fill in by hand.') + (own ? ` ${own} have their own text or date from the imported list.` : '');
     renderPage();
   };
@@ -479,7 +489,7 @@ if (typeof document !== 'undefined') (function () {
     if (needsPro('Saving a certificate as a picture is part of Pro. Printing, and saving as PDF from the print window, are free.')) return;
     const r = limitReason(); if (r) { openPro(r); return; }
     const p = build(false)[pageNo] || build(false)[0], img = new Image(), k = 8; // 8 px per mm ≈ 200 dpi
-    img.onload = () => { const cv = document.createElement('canvas'); cv.width = Math.round(p.w * k); cv.height = Math.round(p.h * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); cv.toBlob((bl) => { const a = document.createElement('a'); a.href = URL.createObjectURL(bl); const nm = (nameList()[pageNo] || 'certificate').replace(/[^\w\- ]+/g, '').trim() || 'certificate'; a.download = nm + '.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); toast(`Saved ${a.download} to your Downloads folder`); }, 'image/png'); };
+    img.onload = () => { const cv = document.createElement('canvas'); cv.width = Math.round(p.w * k); cv.height = Math.round(p.h * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); cv.toBlob((bl) => { const a = document.createElement('a'); a.href = URL.createObjectURL(bl); const nm = safeName(nameList()[pageNo], 'certificate'); a.download = nm + '.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); toast(`Saved ${a.download} to your Downloads folder`); }, 'image/png'); };
     img.onerror = () => toast('The picture could not be created.');
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(p.svg);
   }
@@ -505,7 +515,7 @@ if (typeof document !== 'undefined') (function () {
   $('colors').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { st.color = b.dataset.c; change(); } });
   $('logoBtn').onclick = pickLogo; $('logoDel').onclick = () => { st.logo = ''; change(); };
   $('prev').onclick = () => { if (pageNo > 0) { pageNo--; renderPage(); } };
-  $('next').onclick = () => { if (pageNo < pages.length - 1) { pageNo++; renderPage(); } };
+  $('next').onclick = () => { if (pageNo < pageCount - 1) { pageNo++; renderPage(); } };
   $('printBtn').onclick = printNow; $('pngBtn').onclick = savePicture;
   $('moreBtn').onclick = (e) => { e.stopPropagation(); $('menu').hidden = !$('menu').hidden; };
   document.addEventListener('click', () => { $('menu').hidden = true; });
@@ -553,6 +563,7 @@ if (typeof document !== 'undefined') (function () {
   $('restoreBtn').onclick = async () => { proMessage((await checkPro()) ? 'Pro is unlocked. ★' : 'No purchase was found on this Microsoft account.'); };
   $('closePro').onclick = () => $('proDialog').close();
   window.addEventListener('resize', () => renderPage());
+  document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'p') { e.preventDefault(); printNow(); } }); // Ctrl+P would print an empty page
   setPro(isPro);
   checkPro();
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
